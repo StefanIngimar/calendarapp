@@ -11,7 +11,7 @@ function App(){
     <Router>
       <Routes>
         <Route path='/starter' element={<StarterPage/>} />
-        <Route path="/calendar" element={<TopNavBar><CalendarComponent/></TopNavBar>} />
+        <Route path="/" element={<TopNavBar><CalendarComponent/></TopNavBar>} />
       </Routes>
     </Router>
   )

@@ -1,13 +1,13 @@
 import React from "react";
 import { ReactDOM } from "react";
 import { ClerkProvider } from '@clerk/clerk-react'
-import { SignedIn,SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
+import { SignIn, SignUp, RedirectToSignIn, UserButton } from "@clerk/clerk-react";
 
 
 function StarterPage() {
-  
+
     return(
-        <>
+      
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <img
@@ -22,6 +22,7 @@ function StarterPage() {
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form className="space-y-6" action="#" method="POST">
+            <SignIn>
             <div>
               <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
                 Username
@@ -69,6 +70,7 @@ function StarterPage() {
                 Sign in
               </button>
             </div>
+            </SignIn>
           </form>
 
           <p className="mt-10 text-center text-sm text-gray-500">
@@ -79,7 +81,6 @@ function StarterPage() {
           </p>
         </div>
       </div>
-    </>
     )
 }
 
