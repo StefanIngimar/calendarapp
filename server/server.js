@@ -3,12 +3,14 @@ import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fetchAllSports, fetchNextEvents } from './sportsAPI.js';
+import cors from 'cors'
 
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 console.log(process.env.DB);
 const app = express();
 const uri = process.env.DB;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+app.use(cors());
 
 async function connectToMongo() {
     try {
