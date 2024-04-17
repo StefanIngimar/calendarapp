@@ -7,7 +7,6 @@ import { fetchAllSports, fetchNextEvents } from './sportsAPI.js';
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 console.log(process.env.DB);
 const app = express();
-
 const uri = process.env.DB;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
