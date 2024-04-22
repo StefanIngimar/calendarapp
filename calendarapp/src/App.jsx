@@ -6,7 +6,8 @@ import './index.css'
 import TopNavBar from './components/Navbar';
 import FavoriteSportsSelection from './FavSportSelect.jsx';
 import useFilterStore from './stores/useFilterStore.js';
-import useSportStore from './stores/useSportsStore.js';
+import useSportsStore from './stores/useSportsStore.js';
+import useLeaguesStore from './stores/useLeaguesStore.js';
 
 function App(){
   const{fetchLeagues} = useLeaguesStore((state) => ({
@@ -22,7 +23,6 @@ function App(){
 
   useEffect(() =>{
     fetchLeagues(url_leagues);
-    fetchCountries(url_countries);
     fetchSports(url_sports);
   }, []);
   

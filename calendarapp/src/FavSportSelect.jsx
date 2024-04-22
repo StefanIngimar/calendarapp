@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import useSportStore from './stores/useSportsStore';
+import useSportsStore from './stores/useSportsStore';
 import useFilterStore from './stores/useFilterStore';
+import useLeaguesStore from './stores/useLeaguesStore';
 
 const FavoriteSportsSelection = () => {
     const [sports, setSports] = useState([]);
     const [error, setError] = useState(null);
+    const { fetchLeagues } = useLeaguesStore((state) => ({
+        fetchLeagues: state.fetchLeagues,
+      }));
+      const { fetchSports } = useSportsStore((state) => ({
+        fetchSports: state.fetchSports,
+      }));
     
     useEffect(() => {
         fetchSports('https://www.thesportsdb.com/api/v1/json/3/all_sports.php');
-    }, [fetchSports]);
+        fetchLeagues("https://www.thesportsdb.com/api/v1/json/2/all_leagues.php");
+    }, [fetchSports, fetchLeagues]);
 
     const handleSportSelect = (sport) => {
         addFilteredSport(sport);
