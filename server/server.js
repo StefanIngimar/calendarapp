@@ -52,19 +52,16 @@ app.get('/api/sports', async (req, res) => {
     }
   });
 
-  app.post('/api/user/preferences', async (req, res) => {
-    const { userId, leagues } = req.body;
+  app.post('/api/savePreferences', async (req, res) => {
     try {
-      const result = await client.db("usersDB").collection("preferences").updateOne(
-        { userId },
-        { $set: { leagues } },
-        { upsert: true }
-      );
-      res.json(result);
+        const { userId, leagues } = req.body;
+        const preferences = await UserPreferences.findOneAndUpdate({ userId }, { leagues }, { new: true, upsert: true });
+        res.send({ message: 'Preferences saved successfully', preferences });
     } catch (error) {
-      res.status(500).json({ message: "Failed to save user preferences", error });
+        console.error('Failed to save preferences', error);
+        res.status(500).send('Failed to save preferences');
     }
-  });
+});
 
 app.listen(3000, () => {
     console.log("Server started on port 3000");

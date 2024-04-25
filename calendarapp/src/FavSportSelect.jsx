@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const FavoriteSportsSelection = () => {
     const[leagues, setLeagues] = useState([]);
+    const[selectedLeagues, setSelectedLeagues] = useState([]);
     const[error, setError] = useState(null);
     
     useEffect(() => {
@@ -24,6 +25,27 @@ const FavoriteSportsSelection = () => {
     
         fetchLeagues();
     }, []);
+
+    const handleLeagueSelection = (id) => {
+        setSelectedLeagues(prev =>{
+            if(prev.includes(id)){
+                return prev.filter(leagueId => leagueId !== id);
+            } else{
+                return [...prev, id];
+            }
+        });
+    };
+
+    const savePreferences = async () =>{
+        try{
+            const response = await axios.post('/api/savePreferences', {
+                leagues: selectedLeagues
+            });
+            console.log(response.data.message);
+        } catch(error){
+            console.error('Failed to save preferences', error);
+        }
+    };
     
       return (
         <div>
@@ -45,20 +67,27 @@ const FavoriteSportsSelection = () => {
         <div className="max-w-2xl">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Choose your favourite football leagues</h2>
         </div>
-        <ul role="list" className="grid gap-x-8 gap-y-12 sm:grid-cols-2 sm:gap-y-16 xl:col-span-2">
-          {leagues.map((league) => (
-            <li key={league.idLeague}>
-              <div className="flex items-center gap-x-6">
-                <div>
-                  <h3 className="text-base font-semibold leading-7 tracking-tight text-gray-900">{league.strLeague}</h3>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-      </div>
-      </div>
+        <form className="max-w-md mx-auto">
+                <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Choose your favourite football leagues</h2>
+                {leagues.map((league) => (
+                    <div key={league.idLeague}>
+                        <input
+                            type="checkbox"
+                            id={`league-${league.idLeague}`}
+                            checked={selectedLeagues.includes(league.idLeague)}
+                            onChange={() => handleLeagueSelection(league.idLeague)}
+                        />
+                        <label htmlFor={`league-${league.idLeague}`}>{league.strLeague}</label>
+                    </div>
+                ))}
+                <button type="button" onClick={savePreferences} className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Save Preferences
+                </button>
+            </form>
+            {error && <p className="text-red-500">{error}</p>}
+        </div>
+        </div>
+        </div>
       );
     };
 
