@@ -1,4 +1,6 @@
 import { MongoClient } from 'mongodb';
+import mongoose from 'mongoose';
+import bodyParser from 'body-parser';
 import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -10,18 +12,13 @@ console.log(process.env.DB);
 const app = express();
 const uri = process.env.DB;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-app.use(cors());
+mongoose.connect(process.env.DB, {useNewUrlParser: true, useUnifiedTopology: true});
+app.use(bodyParser.json());
 
-async function connectToMongo() {
-    try {
-        await client.connect();
-        console.log("Connected to MongoDB");
-    } catch (error) {
-        console.error("Could not connect to MongoDB", error);
-    }
-}
-
-connectToMongo();
+const UserPreferences = mongoose.model('UserPreferences', new mongoose.Schema({
+  userId: String,
+  favouriteLeagues: Array
+}));
 
 app.get("/calendar", async (req, res) => {
     try {
@@ -53,10 +50,16 @@ app.get('/api/sports', async (req, res) => {
   });
 
   app.post('/api/savePreferences', async (req, res) => {
+    const {userId, leagues} = req.body;
     try {
-        const { userId, leagues } = req.body;
-        const preferences = await UserPreferences.findOneAndUpdate({ userId }, { leagues }, { new: true, upsert: true });
-        res.send({ message: 'Preferences saved successfully', preferences });
+        let preferences = await UserPreferences.findOne({userId: userId});
+        if(!preferences){
+          preferences = new UserPreferences({userId, leagues});
+        } else{
+          preferences.leagues = leagues;
+        }
+        await preferences.save();
+        res.status(200).json({message: 'Preferences saved successfully', data: preferences});
     } catch (error) {
         console.error('Failed to save preferences', error);
         res.status(500).send('Failed to save preferences');
