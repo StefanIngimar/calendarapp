@@ -4,7 +4,6 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fetchAllSports, fetchNextEvents } from './sportsAPI.js';
 import cors from 'cors'
 
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
@@ -29,25 +28,6 @@ app.get("/calendar", async (req, res) => {
         res.status(500).json({ message: "Failed to fetch events" });
     }
 });
-
-app.get('/api/sports', async (req, res) => {
-    try {
-      const sports = await fetchAllSports();
-      res.json(sports);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch sports data", error });
-    }
-  });
-  
-  app.get('/api/events/:leagueId', async (req, res) => {
-    try {
-      const { leagueId } = req.params;
-      const events = await fetchNextEvents(leagueId);
-      res.json(events);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch events", error });
-    }
-  });
 
   app.post('/api/savePreferences', async (req, res) => {
     const {userId, leagues} = req.body;
