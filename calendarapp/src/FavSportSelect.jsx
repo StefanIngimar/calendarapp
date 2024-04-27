@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const FavoriteSportsSelection = () => {
     const[leagues, setLeagues] = useState([]);
     const[selectedLeagues, setSelectedLeagues] = useState([]);
     const[error, setError] = useState(null);
+    const navigate = useNavigate();
     
     useEffect(() => {
         const fetchLeagues = async () => {
@@ -42,6 +44,7 @@ const FavoriteSportsSelection = () => {
                 leagues: selectedLeagues
             });
             console.log(response.data.message);
+            navigate('/');
         } catch(error){
             console.error('Failed to save preferences', error);
         }
