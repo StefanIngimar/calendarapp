@@ -3,37 +3,72 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const FavoriteSportsSelection = () => {
+    const[countries, setCountries] = useState([]);
+    const[selectedCountries, setSelectedCountries] = useState([]);
     const[leagues, setLeagues] = useState([]);
     const[selectedLeagues, setSelectedLeagues] = useState([]);
+    const[teams, setTeams] = useState([]);
+    const[selectedTeams, setSelectedTeams] = useState([]);
     const[error, setError] = useState(null);
+    const[step, setStep] = useState(1);
     const navigate = useNavigate();
+    const apiKey = import.meta.env.VITE_API;
     
     useEffect(() => {
-        const fetchLeagues = async () => {
+        const fetchCountries = async () => {
             try {
-                const response = await axios.get('https://www.thesportsdb.com/api/v1/json/3/all_leagues.php');
-                console.log("API Response:", response.data);
-                if (response.data && response.data.leagues) {
-                    const footballLeagues = response.data.leagues.filter(league => league.strSport === 'Soccer');
-                        setLeagues(footballLeagues);
+                const response = await axios.get(`https://www.thesportsdb.com/api/v1/json/${apiKey}/all_countries.php`);
+                if (response.data && response.data.countries) {
+                        setCountries(response.data.countries);
                 } else {
-                    setError('No league data found');
+                    setError('No country data found');
                 }
             } catch (error) {
-                console.error('Failed to fetch leagues', error);
-                setError('Failed to fetch leagues');
+                console.error('Failed to fetch countries', error);
+                setError('Failed to fetch countries');
             }
         };
     
-        fetchLeagues();
+        fetchCountries();
     }, []);
 
-    const handleLeagueSelection = (id) => {
-        setSelectedLeagues(prev =>{
-            if(prev.includes(id)){
-                return prev.filter(leagueId => leagueId !== id);
+    useEffect(() =>{
+        if(step === 2){
+        const fetchLeagues = async() => {
+            if(selectedCountries.length > 0){
+                try{
+                    console.log('Leagues', strLeague ,leagueId);
+                    const promises = selectedCountries.map(country =>
+                        axios.get(`https://www.thesportsdb.com/api/v1/json/${apiKey}/search_all_leagues.php?c=${country}`)
+                        );
+                        const responses = await Promise.all(promises);
+                        const allLeagues = responses.flatMap(response => response.data.leagues || []);
+                        setLeagues(allLeagues.filter(league => league.strSport === 'Soccer'));
+                } catch(error){
+                    console.error('Failed to fetch leagues', error);
+                    setError('Failed to fetch leagues');
+                }
+            };
+            fetchLeagues();
+        }}
+    }, [selectedCountries, step, apiKey]);
+
+    const handleCountrySelection = (countryName) => {
+        setSelectedCountries(prev =>{
+            if(prev.includes(countryName)){
+                return prev.filter(name => name !== countryName);
             } else{
-                return [...prev, id];
+                return [...prev, countryName];
+            }
+        });
+    };
+
+    const handleLeagueSelection = (leagueId) => {
+        setSelectedLeagues(prev => {
+            if (prev.includes(leagueId)) {
+                return prev.filter(id => id !== leagueId);
+            } else {
+                return [...prev, leagueId];
             }
         });
     };
@@ -41,9 +76,11 @@ const FavoriteSportsSelection = () => {
     const savePreferences = async () =>{
         try{
             const response = await axios.post('/api/savePreferences', {
-                leagues: selectedLeagues
+                countries: selectedCountries,
+                leagues: selectedLeagues,
+                teams: selectedTeams
             });
-            console.log(response.data.message);
+            console.log('preferences saved:', response.data);
             navigate('/');
         } catch(error){
             console.error('Failed to save preferences', error);
@@ -70,24 +107,53 @@ const FavoriteSportsSelection = () => {
         <div className="max-w-2xl">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Choose your favourite football leagues</h2>
         </div>
-        <form className="max-w-md mx-auto">
-                <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Choose your favourite football leagues</h2>
-                {leagues.map((league) => (
-                    <div key={league.idLeague}>
-                        <input
-                            type="checkbox"
-                            id={`league-${league.idLeague}`}
-                            checked={selectedLeagues.includes(league.idLeague)}
-                            onChange={() => handleLeagueSelection(league.idLeague)}
-                        />
-                        <label htmlFor={`league-${league.idLeague}`}>{league.strLeague}</label>
-                    </div>
-                ))}
-                <button type="button" onClick={savePreferences} className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Save Preferences
-                </button>
-            </form>
+        <div className="max-w-md mx-auto">
+        {step === 1 && (
+                <div>
+                    <h2>Select Countries</h2>
+                    {countries.map((country) => (
+                        <div key={country.name_en}>
+                            <input
+                                type="checkbox"
+                                id={`country-${country.name_en}`}
+                                checked={selectedCountries.includes(country.name_en)}
+                                onChange={() => handleCountrySelection(country.name_en)}
+                            />
+                            <label htmlFor={`country-${country.name_en}`}>{country.name_en}</label>
+                        </div>
+                    ))}
+                    <button onClick={() => setStep(2)}>Next</button>
+                </div>
+            )}
+
+            {step === 2 && (
+                <div>
+                    <h2>Select Leagues</h2>
+                    {leagues.map((league) => (
+                        <div key={league.idLeague}>
+                            <input
+                                type="checkbox"
+                                id={`league-${league.idLeague}`}
+                                checked={selectedLeagues.includes(league.idLeague)}
+                                onChange={() => handleLeagueSelection(league.idLeague)}
+                            />
+                            <label htmlFor={`league-${league.idLeague}`}>{league.strLeague}</label>
+                        </div>
+                    ))}
+                    <button onClick={() => setStep(3)}>Next</button>
+                </div>
+            )}
+
+            {step === 3 && (
+                <div>
+                    <h2>Select Teams</h2>
+                    {/* Team selection logic similar to leagues */}
+                    <button onClick={savePreferences}>Save Preferences</button>
+                </div>
+            )}
+
             {error && <p className="text-red-500">{error}</p>}
+        </div>
         </div>
         </div>
         </div>

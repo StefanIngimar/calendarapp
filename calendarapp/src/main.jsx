@@ -5,7 +5,9 @@ import './index.css'
 import { ClerkProvider } from '@clerk/clerk-react';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const apiKey = import.meta.env.VITE_API;
 console.log("frontendapi key:", PUBLISHABLE_KEY);
+console.log("apikey:", apiKey);
 
 if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Publishable Key")
