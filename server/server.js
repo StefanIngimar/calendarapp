@@ -11,7 +11,14 @@ console.log(process.env.DB);
 const app = express();
 const uri = process.env.DB;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-mongoose.connect(process.env.DB, {useNewUrlParser: true, useUnifiedTopology: true});
+mongoose.connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
+  console.log('MongoDB connected successfully');
+  app.listen(3000, () => {
+      console.log("Server started on port 3000");
+  });
+}).catch(err => {
+  console.error('Failed to connect to MongoDB', err);
+});
 app.use(bodyParser.json());
 
 const UserPreferences = mongoose.model('UserPreferences', new mongoose.Schema({
@@ -29,21 +36,22 @@ app.get("/calendar", async (req, res) => {
     }
 });
 
-  app.post('/api/savePreferences', async (req, res) => {
-    const {userId, leagues} = req.body;
-    try {
-        let preferences = await UserPreferences.findOne({userId: userId});
-        if(!preferences){
-          preferences = new UserPreferences({userId, leagues});
-        } else{
-          preferences.leagues = leagues;
-        }
-        await preferences.save();
-        res.status(200).json({message: 'Preferences saved successfully', data: preferences});
-    } catch (error) {
-        console.error('Failed to save preferences', error);
-        res.status(500).send('Failed to save preferences');
+app.post('/api/savePreferences', async (req, res) => {
+  const { userId, leagues } = req.body;
+  console.log("Received data:", req.body);
+  try {
+    let preferences = await UserPreferences.findOne({ userId: userId });
+    if (!preferences) {
+      preferences = new UserPreferences({ userId, favouriteLeagues: leagues });
+    } else {
+      preferences.favouriteLeagues = leagues;
     }
+    await preferences.save();
+    res.status(200).json({ message: 'Preferences saved successfully', data: preferences });
+  } catch (error) {
+    console.error('Error saving preferences:', error);
+    res.status(500).send('Failed to save preferences');
+  }
 });
 
 app.listen(3000, () => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react'
 
 const FavoriteSportsSelection = () => {
     const[countries, setCountries] = useState([]);
@@ -13,6 +14,7 @@ const FavoriteSportsSelection = () => {
     const[step, setStep] = useState(1);
     const navigate = useNavigate();
     const apiKey = import.meta.env.VITE_API;
+    const { user } = useUser();
     
     useEffect(() => {
         const fetchCountries = async () => {
@@ -61,18 +63,18 @@ const FavoriteSportsSelection = () => {
         const fetchTeams = async() => {
             if (selectedLeagues.length > 0) {
                 try{
-                    const promises = selectedLeagues.map(leagueName =>
-                        axios.get(`https://www.thesportsdb.com/api/v1/json/${apiKey}/search_all_teams.php?l=${encodeURIComponent(leagueName)}`));
+                    const promises = selectedLeagues.map(leagueId =>
+                        axios.get(`https://www.thesportsdb.com/api/v1/json/${apiKey}/lookup_all_teams.php?id=${leagueId}`));
                         const responses = await Promise.all(promises);
                         console.log("API Full Responses:", responses.map(r => r.data));
                         const allTeams = responses.flatMap(response => response.data.teams || []);
+                        console.log("Extracted Teams:", allTeams);
                         if(allTeams.length > 0){
                             setTeams(allTeams);
                         } else{
                             console.log('No teams data found');
                             setError('No teams data found');
                         }
-                        console.log("Extracted Teams:", allTeams);
                 } catch(error){
                     console.error('Failed to fetch teams', error);
                     setError("Failed to fetch leagues");
@@ -93,30 +95,45 @@ const FavoriteSportsSelection = () => {
         });
     };
 
-    const handleLeagueSelection = (leagueId) => {
-        setSelectedLeagues(prev => {
-            if (prev.includes(leagueId)) {
-                return prev.filter(id => id !== leagueId);
+    const handleLeagueSelection = (leagueId) => (event) => {
+        const isChecked = event.target.checked;
+        setSelectedLeagues(prev => 
+        isChecked ? [...prev, leagueId] : prev.filter(id => id !== leagueId)
+    );
+    };
+
+    const handleTeamSelection = (teamId) => {
+        setSelectedTeams(prev => {
+            if (prev.includes(teamId)) {
+                return prev.filter(id => id !== teamId);
             } else {
-                return [...prev, leagueId];
+                return [...prev, teamId];
             }
         });
     };
 
-    const savePreferences = async () =>{
-        try{
-            const response = await axios.post('/api/savePreferences', {
-                countries: selectedCountries,
-                leagues: selectedLeagues,
-                teams: selectedTeams
-            });
-            console.log('preferences saved:', response.data);
-            navigate('/');
-        } catch(error){
-            console.error('Failed to save preferences', error);
+    const savePreferences = async () => {
+        if (!user) {
+            console.error('No user data found');
+            return;
         }
-    };
-    
+
+        try {
+          const response = await axios.post('/api/savePreferences', {
+            userId: user.id,
+            leagues: selectedLeagues.map(leagueId => ({
+              idLeague: leagueId,
+            })),
+            teams: selectedTeams
+          });
+          console.log('Preferences saved:', response.data);
+          navigate('/');
+        } catch (error) {
+          console.error('Failed to save preferences', error);
+        }
+      };
+
+    console.log("Teams to render:", teams);
       return (
         <div>
         <form className="max-w-md mx-auto">   
@@ -167,7 +184,7 @@ const FavoriteSportsSelection = () => {
                                 type="checkbox"
                                 id={`league-${league.idLeague}`}
                                 checked={selectedLeagues.includes(league.idLeague)}
-                                onChange={() => handleLeagueSelection(league.idLeague)}
+                                onChange={handleLeagueSelection(league.idLeague)}
                             />
                         </div>
                     ))
@@ -180,15 +197,23 @@ const FavoriteSportsSelection = () => {
 
             {step === 3 && (
                 <div>
-                    <h2>Select Teams</h2>
+                    <h2>Select Which Teams You Watch</h2>
                     {teams.length > 0 ? (
-                        teams.map(team => {
-                            <div key={team.idTeam}>
-                                <h3>{team.strTeam}</h3>
-                                <img src={team.strStadiumThumb} alt={`${team.strTeam} Stadium`}/>
-                                <p>{team.strStadiumDescription}</p>
+                        teams.map(team => (
+                            <div key={team.idTeam} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                                <input
+                                type='checkbox'
+                                id={`team-${team.idTeam}`}
+                                checked={selectedTeams.includes(team.idTeam)}
+                                onChange={() => handleTeamSelection(team.idTeam)}
+                                style={{marginRight: '10px'}}
+                                />
+                                <label htmlFor={`team-${team.idTeam}`}>
+                                <img src={team.strTeamBadge} alt={`${team.strTeam} Badge`} style={{ width: '30px', marginRight: '10px', verticalAlign: 'middle' }}/>
+                                {team.strTeam}
+                                </label>
                             </div>
-                        })
+                        ))
                     ) : (
                         <p>No teams found</p>
                     )}
