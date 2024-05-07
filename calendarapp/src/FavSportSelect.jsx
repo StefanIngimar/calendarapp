@@ -33,25 +33,55 @@ const FavoriteSportsSelection = () => {
     }, []);
 
     useEffect(() =>{
-        if(step === 2){
         const fetchLeagues = async() => {
             if(selectedCountries.length > 0){
                 try{
-                    console.log('Leagues', strLeague ,leagueId);
                     const promises = selectedCountries.map(country =>
                         axios.get(`https://www.thesportsdb.com/api/v1/json/${apiKey}/search_all_leagues.php?c=${country}`)
-                        );
-                        const responses = await Promise.all(promises);
-                        const allLeagues = responses.flatMap(response => response.data.leagues || []);
-                        setLeagues(allLeagues.filter(league => league.strSport === 'Soccer'));
+                    );
+                    const responses = await Promise.all(promises);
+                    console.log("Raw API responses:", responses);
+            
+                    const allLeagues = responses.flatMap(response => response.data.countries || []);
+                    setLeagues(allLeagues);
+                    console.log("All leagues extracted:", allLeagues);
                 } catch(error){
                     console.error('Failed to fetch leagues', error);
                     setError('Failed to fetch leagues');
                 }
             };
+        }
+        if(step === 2){
             fetchLeagues();
-        }}
+        }
     }, [selectedCountries, step, apiKey]);
+    console.log("Rendering leagues:", leagues);
+
+    useEffect(() => {
+        const fetchTeams = async() => {
+            if (selectedLeagues.length > 0) {
+                try{
+                    const promises = selectedLeagues.map(leagueName =>
+                        axios.get(`https://www.thesportsdb.com/api/v1/json/${apiKey}/search_all_teams.php?l=${encodeURIComponent(leagueName)}`));
+                        const responses = await Promise.all(promises);
+                        console.log("API Full Responses:", responses.map(r => r.data));
+                        const allTeams = responses.flatMap(response => response.data.teams || []);
+                        if(allTeams.length > 0){
+                            setTeams(allTeams);
+                        } else{
+                            console.log('No teams data found');
+                            setError('No teams data found');
+                        }
+                        console.log("Extracted Teams:", allTeams);
+                } catch(error){
+                    console.error('Failed to fetch teams', error);
+                    setError("Failed to fetch leagues");
+                }
+            }
+        };
+            fetchTeams();
+        
+    },  [selectedLeagues, apiKey]);
 
     const handleCountrySelection = (countryName) => {
         setSelectedCountries(prev =>{
@@ -129,17 +159,21 @@ const FavoriteSportsSelection = () => {
             {step === 2 && (
                 <div>
                     <h2>Select Leagues</h2>
-                    {leagues.map((league) => (
+                    {leagues.length > 0 ? (
+                    leagues.map(league => (
                         <div key={league.idLeague}>
+                            <label htmlFor={`league-${league.idLeague}`}>{league.strLeague}</label>
                             <input
                                 type="checkbox"
                                 id={`league-${league.idLeague}`}
                                 checked={selectedLeagues.includes(league.idLeague)}
                                 onChange={() => handleLeagueSelection(league.idLeague)}
                             />
-                            <label htmlFor={`league-${league.idLeague}`}>{league.strLeague}</label>
                         </div>
-                    ))}
+                    ))
+                    ) : (
+                        <p>No leagues found</p>
+                    )}
                     <button onClick={() => setStep(3)}>Next</button>
                 </div>
             )}
@@ -147,7 +181,17 @@ const FavoriteSportsSelection = () => {
             {step === 3 && (
                 <div>
                     <h2>Select Teams</h2>
-                    {/* Team selection logic similar to leagues */}
+                    {teams.length > 0 ? (
+                        teams.map(team => {
+                            <div key={team.idTeam}>
+                                <h3>{team.strTeam}</h3>
+                                <img src={team.strStadiumThumb} alt={`${team.strTeam} Stadium`}/>
+                                <p>{team.strStadiumDescription}</p>
+                            </div>
+                        })
+                    ) : (
+                        <p>No teams found</p>
+                    )}
                     <button onClick={savePreferences}>Save Preferences</button>
                 </div>
             )}
