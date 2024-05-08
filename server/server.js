@@ -27,7 +27,8 @@ mongoose.connect(uri)
 
 const UserPreferences = mongoose.model('UserPreferences', new mongoose.Schema({
   userId: String,
-  favouriteLeagues: Array
+  favouriteLeagues: Array,
+  favouriteTeams: Array
 }));
 
 app.get("/calendar", async (req, res) => {
@@ -41,14 +42,15 @@ app.get("/calendar", async (req, res) => {
 });
 
 app.post('/api/savePreferences', async (req, res) => {
-  const { userId, leagues } = req.body;
+  const { userId, leagues, teams } = req.body;
   console.log("Received data:", req.body);
   try {
     let preferences = await UserPreferences.findOne({ userId });
     if (!preferences) {
-      preferences = new UserPreferences({ userId, favouriteLeagues: leagues });
+      preferences = new UserPreferences({ userId, favouriteLeagues: leagues, favouriteTeams: teams });
     } else {
       preferences.favouriteLeagues = leagues;
+      preferences.favouriteTeams = teams;
     }
     await preferences.save();
     res.status(200).json({ message: 'Preferences saved successfully', data: preferences });
@@ -59,5 +61,5 @@ app.post('/api/savePreferences', async (req, res) => {
 });
 
 app.listen(3001, () => {
-    console.log("Server started on port 3000");
+    console.log("Server started on port 3001");
 });
