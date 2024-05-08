@@ -1,25 +1,29 @@
-import { MongoClient } from 'mongodb';
 import mongoose from 'mongoose';
 import bodyParser from 'body-parser';
 import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
-import cors from 'cors'
+import cors from 'cors';
 
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 console.log(process.env.DB);
+
 const app = express();
-const uri = process.env.DB;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-mongoose.connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
-  console.log('MongoDB connected successfully');
-  app.listen(3000, () => {
-      console.log("Server started on port 3000");
-  });
-}).catch(err => {
-  console.error('Failed to connect to MongoDB', err);
-});
+app.use(cors());
 app.use(bodyParser.json());
+
+const uri = 'mongodb+srv://stefan:helloworld97@users.ixmf0ot.mongodb.net/?retryWrites=true&w=majority&appName=Users'
+
+mongoose.connect(uri)
+  .then(() => {
+    console.log('MongoDB connected successfully');
+    app.listen(3000, () => {
+      console.log("Server started on port 3000");
+    });
+  })
+  .catch(err => {
+    console.error('Failed to connect to MongoDB', err);
+  });
 
 const UserPreferences = mongoose.model('UserPreferences', new mongoose.Schema({
   userId: String,
@@ -40,7 +44,7 @@ app.post('/api/savePreferences', async (req, res) => {
   const { userId, leagues } = req.body;
   console.log("Received data:", req.body);
   try {
-    let preferences = await UserPreferences.findOne({ userId: userId });
+    let preferences = await UserPreferences.findOne({ userId });
     if (!preferences) {
       preferences = new UserPreferences({ userId, favouriteLeagues: leagues });
     } else {
@@ -54,6 +58,6 @@ app.post('/api/savePreferences', async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
+app.listen(3001, () => {
     console.log("Server started on port 3000");
 });
