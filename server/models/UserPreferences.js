@@ -10,6 +10,13 @@ const UserPreferencesSchema = new mongoose.Schema({
     idLeague: String,
     strLeague: String,
     strSport: String
+  }],
+  favouriteTeams: [{
+    idTeam: String,
+    strTeam: String,
+    strTeamShort: String,
+    idLeague: String,
+    strTeamBadge: String
   }]
 });
 

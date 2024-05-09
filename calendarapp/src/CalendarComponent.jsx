@@ -9,37 +9,66 @@ import { useUser } from "@clerk/clerk-react";
 
 function CalendarComponent() {
   const[events, setEvents] = useState([]);
-  const { isSignedIn, user, isLoaded } = useUser();
-  const handleDateClick = (arg) => {
-    alert(arg.dateStr);
-  };
+  const { isSignedIn, user } = useUser();
   const apiKey = import.meta.env.VITE_API;
   const calendarRef = React.createRef();
 
-  useEffect(() =>{
-    const fetchMatchesByTeam = async() =>{
-      if(!user) return;
-      const eventsByTeam = await Promise.all(
-        user.favTeamsmap(teamId=>
-          axios.get(`www.thesportsdb.com/api/v1/json/${apiKey}/eventsnext.php?id=${teamId}`)
+  const fetchMatchesByTeam = async (teamIds) => {
+    try {
+      const allMatches = await Promise.all(
+        teamIds.map(teamId =>
+          axios.get(`https://www.thesportsdb.com/api/v1/json/${apiKey}/eventsnext.php?id=${teamId}`)
         )
       );
+      console.log("API Responses:", allMatches);
 
-      const formattedEvents = allMatches.flatMap(response => response.data.events.map(event => ({
-        title: `${event.strHomeTeam} vs ${event.strAwayTeam}`,
-        start: event.dateEvent,
-        allDay: true,
-        url: event.strThumb,
-      })));
+      const formattedEvents = allMatches.flatMap(response => {
+        console.log("Individual Response Data:", response.data);
+        return response.data.events ? response.data.events.map(event => ({
+          title: `${event.strHomeTeam} vs ${event.strAwayTeam}`,
+          start: event.dateEvent,
+          allDay: true,
+          url: event.strThumb,
+        })) : [];
+      });
+      console.log("Formatted Events:", formattedEvents);
       setEvents(formattedEvents);
-    };
-    fetchMatchesByTeam();
-  }, [user]);
+    } catch (error) {
+      console.error('Error fetching matches:', error);
+    }
+  };
+
+  function handleDateSelect(selectInfo) {
+    let title = prompt('Please enter a new title for your event')
+    let calendarApi = selectInfo.view.calendar
+
+    calendarApi.unselect() // clear date selection
+
+    if (title) {
+      calendarApi.addEvent({
+        id: createEventId(),
+        title,
+        start: selectInfo.startStr,
+        end: selectInfo.endStr,
+        allDay: selectInfo.allDay
+      })
+    }
+  }
+
+  useEffect(() => {
+    if (isSignedIn && user && Array.isArray(user.favouriteTeams)) {
+      fetchMatchesByTeam(user.favouriteTeams);
+    }
+  }, [isSignedIn, user]);
 
   const customButtonAction = () => {
     const calendarApi = calendarRef.current.getApi();
     calendarApi.next();
   };
+
+  if (!isSignedIn) {
+    return <div>Not signed in</div>;
+  }
 
   if(isSignedIn){
 
@@ -61,7 +90,10 @@ function CalendarComponent() {
         }
       }}
       events={events}
-      dateClick={handleDateClick}
+      editable={true}
+      selectable={true}
+      selectMirror={true}
+      dayMaxEvents={true}
     />
     </header>
   );
