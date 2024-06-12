@@ -14,23 +14,34 @@ function CalendarComponent() {
   const calendarRef = React.createRef();
 
   const fetchMatchesByTeam = async (teamIds) => {
+    console.log("Fetching matches for team ID", teamIds);
+    if(!teamIds.length){
+      console.log("No team IDs available to fetch mathes");
+      return;
+    }
     try {
       const allMatches = await Promise.all(
-        teamIds.map(teamId =>
-          axios.get(`https://www.thesportsdb.com/api/v1/json/${apiKey}/eventsnext.php?id=${teamId}`)
-        )
+        teamIds.map(teamId =>{
+          const url = `https://www.thesportsdb.com/api/v1/json/${apiKey}/eventsnext.php?id=${teamId}`;
+          console.log("Fetching from url:", url);
+          return axios.get(url);
+        })
       );
       console.log("API Responses:", allMatches);
-
+      console.log("All matches fetched", allTeams);
       const formattedEvents = allMatches.flatMap(response => {
-        console.log("Individual Response Data:", response.data);
-        return response.data.events ? response.data.events.map(event => ({
-          title: `${event.strHomeTeam} vs ${event.strAwayTeam}`,
-          start: event.dateEvent,
-          allDay: true,
-          url: event.strThumb,
-        })) : [];
-      });
+        if (response.data.events) {
+            return response.data.events.map(event => ({
+                title: `${event.strHomeTeam} vs ${event.strAwayTeam}`,
+                start: event.dateEvent,
+                allDay: true,
+                url: event.strThumb,
+            }));
+        } else {
+            console.error("No events found in response:", response);
+            return [];
+        }
+    });
       console.log("Formatted Events:", formattedEvents);
       setEvents(formattedEvents);
     } catch (error) {
@@ -38,26 +49,19 @@ function CalendarComponent() {
     }
   };
 
-  function handleDateSelect(selectInfo) {
-    let title = prompt('Please enter a new title for your event')
-    let calendarApi = selectInfo.view.calendar
-
-    calendarApi.unselect() // clear date selection
-
-    if (title) {
-      calendarApi.addEvent({
-        id: createEventId(),
-        title,
-        start: selectInfo.startStr,
-        end: selectInfo.endStr,
-        allDay: selectInfo.allDay
-      })
+  const triggerEventImport = async () => {
+    try {
+      const result = await axios.get('/api/import-events');
+      console.log(result.data.message);
+    } catch (error) {
+      console.error('Failed to trigger event import:', error);
     }
-  }
+  };
 
   useEffect(() => {
     if (isSignedIn && user && Array.isArray(user.favouriteTeams)) {
       fetchMatchesByTeam(user.favouriteTeams);
+      triggerEventImport();
     }
   }, [isSignedIn, user]);
 

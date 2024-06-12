@@ -1,4 +1,4 @@
-const mongoose = require('mongodb');
+const mongoose = require('mongoose');
 
 const UserPreferencesSchema = new mongoose.Schema({
   userId: {
