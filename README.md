@@ -110,3 +110,14 @@ To run the Vite frontend, navigate back to the client directory:
 >npm run dev
 
 This will start the Vite development server, and you can access the app at http://localhost:3000.
+
+------------------------------
+
+
+# Screenshots
+
+![Screenshot from 2024-09-11 16-13-30](https://github.com/user-attachments/assets/65cd1612-2fbf-4547-a52c-59a361c0ce7e)
+
+![Screenshot from 2024-09-11 16-14-17](https://github.com/user-attachments/assets/b89a66bc-9ac7-4431-b01b-84163511598c)
+
+![Screenshot from 2024-09-11 16-15-04](https://github.com/user-attachments/assets/9535fc27-16eb-45d0-8e29-0a892ac213e8)
